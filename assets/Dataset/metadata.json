@@ -1,0 +1,244 @@
+{
+  "title": "Best Sellers Cleaned Dataset",
+  "description": "This dataset contains information on products listed on Amazon, including details such as name, price, ratings, reviews, and seller information. The dataset is intended for use in e-commerce analysis, product research, and data-driven marketing studies.",
+  "version": "1.0",
+  "keywords": [
+    "Amazon",
+    "bird food",
+    "e-commerce",
+    "product data",
+    "wildlife"
+  ],
+  "contributors": [
+    {
+      "name": "Octaprice",
+      "role": "Data Curator",
+      "contact": "contact@octaprice.com"
+    }
+  ],
+  "license": "CC BY 4.0",
+  "citation": "If using this dataset, please cite as: Amazon Bird Food Dataset, curated by Octaprice, 2025.",
+  "source": "Amazon.com",
+  "data_schema": {
+    "columns": [
+      {
+        "name": "additionalProperties",
+        "description": "A collection of product-specific details, including MPAA rating, dimensions, media format, run time, release date, actors, dubbed languages, studio, ASIN, country of origin, and best sellers rank. This provides a variety of information that can be used for filtering, sorting, and detailed product display.",
+        "type": "string",
+        "example": "[{\"name\": \"mpaa rating\", \"value\": \"PG (Parental Guidance Suggested)\"}, {\"name\": \"product dimensions\", \"value\": \"1 x 1 x 1 inches; 2.4 ounces\"}, {\"name\": \"media format\", \"value\": \"4K, Blu-ray, Digital_copy\"}, {\"name\": \"run time\", \"value\": \"1 hour and 49 minutes\"}, {\"name\": \"release date\", \"value\": \"April 15, 2025\"}, {\"name\": \"actors\", \"value\": \"Jim Carrey, Ben Schwartz, Krysten Ritter, Idris Elba, Keanu Reeves\"}, {\"name\": \"dubbed:  :\", \"value\": \"Spanish, French\"}, {\"name\": \"studio\", \"value\": \"PARAMOUNT\"}, {\"name\": \"asin\", \"value\": \"B0DTQCFGX3\"}, {\"name\": \"country of origin\", \"value\": \"USA\"}, {\"name\": \"best sellers rank\", \"value\": \"#1 in Movies & TV (See Top 100 in Movies & TV) #1 in Action & Adventure Blu-ray Discs\"}]"
+      },
+      {
+        "name": "brandName",
+        "description": "The brand or manufacturer name of the product. It's useful for filtering and identifying products from specific brands.",
+        "type": "string",
+        "example": "Amazon Basics"
+      },
+      {
+        "name": "breadcrumbs",
+        "description": "A hierarchical list of categories that the product belongs to, often used to guide navigation and filtering. It shows the path of categories from general to specific, e.g., 'Movies & TV' to 'Action & Adventure'.",
+        "type": "string",
+        "example": "[{\"name\": \"Movies & TV\"}, {\"name\": \"Featured Categories\"}, {\"name\": \"Blu-ray\"}, {\"name\": \"Action & Adventure\"}]"
+      },
+      {
+        "name": "color",
+        "description": "The color or color combination of the product. It is useful for filtering and product selection based on visual appeal.",
+        "type": "string",
+        "example": "Blue & White"
+      },
+      {
+        "name": "currency",
+        "description": "The currency code for the product's price, typically 'USD' for United States Dollars.",
+        "type": "string",
+        "example": "USD"
+      },
+      {
+        "name": "current_depth",
+        "description": "The current depth of the item within a hierarchical category structure, where 1 indicates the top-level category.",
+        "type": "integer",
+        "example": 1
+      },
+      {
+        "name": "description",
+        "description": "A textual description of the product, which is often a concise version of the description.",
+        "type": "string",
+        "example": "Amazon Exclusive 4K UHD + BD Steelbook, Amazon Exclusive Edition"
+      },
+      {
+        "name": "descriptionRaw",
+        "description": "The raw HTML or markup version of the product description, which often contains formatting or layout information.",
+        "type": "string",
+        "example": "<article>\n\n<p>Amazon Exclusive 4K UHD + BD Steelbook,  Amazon Exclusive Edition</p>\n\n</article>"
+      },
+      {
+        "name": "features",
+        "description": "A list of key features of the product, often presented as bullet points or short statements describing its characteristics or benefits.",
+        "type": "string",
+        "example": "[\"INCLUDES: 100 Regular-size standard-absorbency puppy pee pads; ideal for puppy training, senior dogs, car trips, and more\", \"5-LAYER PROTECTION: Multi-layer construction with quick-dry surface and absorbent core that turns liquid into gel on contact\", \"LEAKPROOF: Plastic lining keeps floors safe from damage; plastic border on all 4 sides to prevent overflow\", \"BUILT-IN ATTRACTANT: Helps aid in potty training\", \"PRODUCT DIMENSIONS: 22 x 22 inches (LxW, overall); 19 x 19 inches (LxW, center pad); 1.65 inch border\"]"
+      },
+      {
+        "name": "gtin",
+        "description": "The Global Trade Item Number (GTIN) for the product, which is a unique identifier used to track trade items. It is given as an array of objects, where each object contains a type and a value.",
+        "type": "string",
+        "example": "[{\"type\": \"gtin14\", \"value\": \"00841710108361\"}]"
+      },
+      {
+        "name": "imageUrls",
+        "description": "A list of URLs pointing to images of the product. These URLs can be used to display product visuals on a website or application.",
+        "type": "string",
+        "example": "[\"https://m.media-amazon.com/images/I/51rnJbc9CrL._SX300_SY300_QL70_FMwebp_.jpg\", \"https://m.media-amazon.com/images/I/5105ojcwHAL._SX38_SY50_CR,0,0,38,50_.jpg\", \"https://m.media-amazon.com/images/I/51rnJbc9CrL._SX38_SY50_CR,0,0,38,50_.jpg\"]"
+      },
+      {
+        "name": "inStock",
+        "description": "A boolean value indicating whether the product is currently available in stock. This field is useful for filtering products by availability.",
+        "type": "string",
+        "example": true
+      },
+      {
+        "name": "listedPrice",
+        "description": "The listed price of the product. This is the price at which the product is offered for sale, typically in a specific currency.",
+        "type": "float",
+        "example": 20.99
+      },
+      {
+        "name": "material",
+        "description": "The primary material from which the product is made. This field provides information about the composition of the product and can help users make informed purchase decisions.",
+        "type": "string",
+        "example": "Polyethylene (PE)"
+      },
+      {
+        "name": "mpn",
+        "description": "The manufacturer part number for the product. This is a unique identifier assigned by the manufacturer, which can be useful for inventory management and product identification.",
+        "type": "string",
+        "example": "TRP100R"
+      },
+      {
+        "name": "name",
+        "description": "The name or title of the product, typically including details such as the brand, model, and specific attributes.",
+        "type": "string",
+        "example": "Sonic The Hedgehog 3 Amazon Exclusive [4K Steelbook + Blu-Ray + Digital Copy]"
+      },
+      {
+        "name": "new_path",
+        "description": "The category path of the product, representing its location in the product hierarchy.",
+        "type": "string",
+        "example": "Movies & TV"
+      },
+      {
+        "name": "nodeName",
+        "description": "The name of the product category, indicating the top-level grouping to which the product belongs.",
+        "type": "string",
+        "example": "Movies & TV"
+      },
+      {
+        "name": "rating",
+        "description": "The average rating of the product based on user reviews, typically on a scale of 1 to 5 stars.",
+        "type": "float",
+        "example": 3.5
+      },
+      {
+        "name": "reviewCount",
+        "description": "The total number of reviews submitted by users for the specific product.",
+        "type": "float",
+        "example": 10.0
+      },
+      {
+        "name": "salePrice",
+        "description": "The current price of the product on sale, represented as a floating-point number.",
+        "type": "float",
+        "example": 44.99
+      },
+      {
+        "name": "scrapedDate",
+        "description": "The date and time when the product data was scraped, in ISO 8601 format.",
+        "type": "string",
+        "example": "2025-01-23T11:03:28Z"
+      },
+      {
+        "name": "size",
+        "description": "The dimensions and weight of the product, formatted as a string.",
+        "type": "string",
+        "example": "1 x 1 x 1 inches; 2.4 ounces"
+      },
+      {
+        "name": "sku",
+        "description": "The unique Stock Keeping Unit (SKU) identifier for the product on Amazon.",
+        "type": "string",
+        "example": "B0DTQCFGX3"
+      },
+      {
+        "name": "style",
+        "description": "The style or design variation of the product, such as 'Regular' or 'Slim'.",
+        "type": "string",
+        "example": "Regular"
+      },
+      {
+        "name": "url",
+        "description": "The URL of the product page on Amazon.",
+        "type": "string",
+        "example": "https://www.amazon.com/dp/B0DTQCFGX3"
+      },
+      {
+        "name": "variants",
+        "description": "A list of product variants, each specified as a JSON object with attributes like size.",
+        "type": "string",
+        "example": "[{\"size\": \"Giant (40 Count)\"}, {\"size\": \"X-Large (40 Count)\"}, {\"size\": \"Regular (50 Count)\"}, {\"size\": \"X-Large (60 Count)\"}, {\"size\": \"Regular (150 Count)\"}, {\"size\": \"X-Large (25 Count)\"}, {\"size\": \"Giant (30 Count)\"}, {\"size\": \"X-Large (50 Count)\"}, {\"size\": \"Regular (80 Count)\"}, {\"size\": \"Regular (100 Count)\"}]"
+      },
+      {
+        "name": "weight_rawUnit",
+        "description": "The original unit of weight measurement as found on the product page.",
+        "type": "string",
+        "example": "Ounces"
+      },
+      {
+        "name": "weight_unit",
+        "description": "The standardized unit of weight measurement.",
+        "type": "string",
+        "example": "ounce"
+      },
+      {
+        "name": "weight_value",
+        "description": "The numerical value of the product's weight.",
+        "type": "float",
+        "example": 1.76
+      }
+    ],
+    "missing_values": {
+      "additionalProperties": "45 rows",
+      "brandName": "2010 rows",
+      "breadcrumbs": "203 rows",
+      "color": "14609 rows",
+      "currency": "623 rows",
+      "current_depth": "0 rows (complete)",
+      "description": "6 rows",
+      "descriptionRaw": "5 rows",
+      "features": "6661 rows",
+      "gtin": "16651 rows",
+      "imageUrls": "8 rows",
+      "inStock": "4922 rows",
+      "listedPrice": "11068 rows",
+      "material": "15505 rows",
+      "mpn": "13176 rows",
+      "name": "1 rows",
+      "new_path": "0 rows (complete)",
+      "nodeName": "0 rows (complete)",
+      "rating": "1136 rows",
+      "reviewCount": "1042 rows",
+      "salePrice": "746 rows",
+      "scrapedDate": "0 rows (complete)",
+      "size": "1741 rows",
+      "sku": "3 rows",
+      "style": "19887 rows",
+      "url": "168 rows",
+      "variants": "15715 rows",
+      "weight_rawUnit": "12714 rows",
+      "weight_unit": "12714 rows",
+      "weight_value": "10237 rows"
+    }
+  },
+  "size": {
+    "rows": 25874,
+    "columns": 30
+  },
+  "date_created": "2025-01-25",
+  "usage": "For non-commercial, academic, and research purposes only."
+}
