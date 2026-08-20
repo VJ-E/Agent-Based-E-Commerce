@@ -1,29 +1,154 @@
 'use client';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
 import SidebarFilter from '@/components/SidebarFilter';
 import HeroLanding from '@/components/HeroLanding';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import MiniProductCard from '@/components/MiniProductCard';
 
 function Storefront() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef(null);
   const [chatState, setChatState] = useState('closed'); // 'closed', 'open', 'maximized'
+  const [messages, setMessages] = useState([{ role: 'assistant', content: 'Hi there! Looking for anything specific today? I can help you find deals or recommend products based on your style.' }]);
+  const [input, setInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  const chatContainerRef = useRef(null);
 
   useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, isThinking]);
+
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bentely_chat_history');
+      if (saved) {
+        setMessages(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load chat history', e);
+    }
+  }, []);
+
+  // Save chat history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('bentely_chat_history', JSON.stringify(messages));
+    } catch (e) {
+      console.error('Failed to save chat history', e);
+    }
+  }, [messages]);
+
+  const handleSendMessage = async (e) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || isThinking) return;
+
+    const userMessage = { role: 'user', content: input.trim() };
+    
+    // Truncate history to keep greeting + last 13 messages (7 pairs)
+    let currentHistory = messages;
+    if (currentHistory.length > 14) {
+      currentHistory = [currentHistory[0], ...currentHistory.slice(-13)];
+    }
+    
+    const newMessages = [...currentHistory, userMessage];
+    setMessages(newMessages);
+    setInput('');
+    setIsThinking(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages })
+      });
+      
+      const data = await response.json();
+      setMessages(prev => {
+        let updated = [...prev, data];
+        if (updated.length > 15) {
+          updated = [updated[0], ...updated.slice(-14)];
+        }
+        return updated;
+      });
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // Reset pagination when search params change
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setProducts([]);
+    
+    // Smooth scroll to discover section when category changes
+    const discoverSection = document.getElementById('discover');
+    if (discoverSection) {
+      discoverSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!hasMore) return;
     setLoading(true);
-    fetch(`/api/products?${searchParams.toString()}`)
+    
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', page);
+
+    fetch(`/api/products?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
-        setProducts(Array.isArray(data) ? data : []);
+        const newProducts = Array.isArray(data) ? data : [];
+        if (newProducts.length < 20) setHasMore(false);
+        
+        setProducts(prev => {
+           // Prevent duplicates on React strict mode double renders
+           const existingIds = new Set(prev.map(p => p._id));
+           const filteredNew = newProducts.filter(p => !existingIds.has(p._id));
+           return [...prev, ...filteredNew];
+        });
         setLoading(false);
       })
       .catch(err => {
         console.error("Failed to load products", err);
         setLoading(false);
       });
-  }, [searchParams]);
+  }, [searchParams, page]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && !loading && hasMore) {
+          setPage(prev => prev + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [loading, hasMore]);
 
   return (
     <>
@@ -31,10 +156,10 @@ function Storefront() {
       <HeroLanding />
 
       <div className="flex max-w-[1920px] mx-auto min-h-screen pt-12 relative z-10 bg-transparent">
-        <SidebarFilter categories={['Electronics', 'Clothing', 'Furniture', 'Accessories', 'Sports', 'Home & Kitchen']} />
+        <SidebarFilter categories={['Movies & TV', 'Industrial & Scientific', 'Sports & Outdoors', 'Clothing', 'Books', 'Electronics']} />
         
         {/* Main Content Area */}
-        <main className="flex-1 lg:ml-0 p-6 lg:p-8 w-full">
+        <main id="discover" className="flex-1 lg:ml-0 p-6 lg:p-8 w-full scroll-mt-24">
           {/* Page Header */}
         <div className="mb-8 flex justify-between items-end">
           <div>
@@ -50,15 +175,22 @@ function Storefront() {
             ))}
           </div>
         ) : products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 pb-24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 pb-12">
             {products.map(product => (
               <ProductCard key={product._id} product={product} />
             ))}
           </div>
-        ) : (
+        ) : !loading && products.length === 0 ? (
           <div className="text-center py-20 clay-card rounded-3xl pb-24">
              <h3 className="text-xl font-bold text-zinc-800">No products found</h3>
              <p className="mt-2 text-zinc-500">Try adjusting your filters or search query.</p>
+          </div>
+        ) : null}
+
+        {/* Intersection Observer Target for Lazy Loading */}
+        {hasMore && (
+          <div ref={observerTarget} className="flex justify-center py-8">
+             <div className="w-8 h-8 border-4 border-green-200 border-t-green-500 rounded-full animate-spin"></div>
           </div>
         )}
       </main>
@@ -111,29 +243,71 @@ function Storefront() {
                 )}
               </div>
               {/* Chat Area */}
-              <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-50/50">
-                <div className="flex items-start gap-2 max-w-[85%]">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
-                    <span className="text-green-600 text-lg font-[family-name:var(--font-logo)]">B</span>
+              <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-zinc-50/50">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className={`flex items-start gap-3 max-w-[90%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+                    {msg.role === 'assistant' && (
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
+                        <span className="text-green-600 text-lg font-[family-name:var(--font-logo)]">B</span>
+                      </div>
+                    )}
+                    <div className={`p-3.5 rounded-2xl shadow-sm border text-base font-[family-name:var(--font-body)] ${
+                      msg.role === 'user' 
+                        ? 'bg-zinc-800 text-white rounded-tr-sm border-zinc-800' 
+                        : 'bg-white border-zinc-100 text-zinc-700 rounded-tl-sm'
+                    }`}>
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : (
+                        <div className="prose max-w-none prose-green prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5 text-[15px] leading-relaxed">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        </div>
+                      )}
+                      
+                      {msg.products && msg.products.length > 0 && (
+                        <div className="mt-4 flex overflow-x-auto gap-3 pb-2 snap-x w-full" style={{ scrollbarWidth: 'thin' }}>
+                          {msg.products.map(p => (
+                            <MiniProductCard key={p._id} product={p} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="bg-white p-3 rounded-2xl rounded-tl-sm shadow-sm border border-zinc-100 text-sm text-zinc-700 font-[family-name:var(--font-body)]">
-                      Hi there! Looking for anything specific today? I can help you find deals or recommend products based on your style.
+                ))}
+                
+                {isThinking && (
+                  <div className="flex items-start gap-3 max-w-[90%]">
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
+                      <span className="text-green-600 text-lg font-[family-name:var(--font-logo)]">B</span>
+                    </div>
+                    <div className="bg-white p-3.5 rounded-2xl rounded-tl-sm shadow-sm border border-zinc-100 text-base text-zinc-400 flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-1.5 h-1.5 bg-zinc-300 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2 ml-10">
-                  <button className="px-3 py-1.5 bg-white border border-green-200 rounded-full text-xs font-medium text-green-700 hover:bg-green-50 transition-colors shadow-sm">Find tech deals</button>
-                  <button className="px-3 py-1.5 bg-white border border-green-200 rounded-full text-xs font-medium text-green-700 hover:bg-green-50 transition-colors shadow-sm">Gift ideas</button>
-                </div>
+                )}
               </div>
               {/* Input Area */}
-              <div className="p-3 bg-white border-t border-zinc-100">
+              <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-zinc-100">
                 <div className="relative flex items-center">
-                  <input className="clay-input w-full py-2.5 pl-4 pr-10 text-sm text-zinc-700 placeholder-zinc-400 bg-zinc-50" placeholder="Ask me anything..." type="text"/>
-                  <button className="absolute right-2 text-green-600 p-1.5 hover:bg-green-50 rounded-full transition-colors flex items-center justify-center">
+                  <input 
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="clay-input w-full py-3 pl-4 pr-12 text-[15px] text-zinc-700 placeholder-zinc-400 bg-zinc-50" 
+                    placeholder="Ask me anything..." 
+                    type="text"
+                    disabled={isThinking}
+                  />
+                  <button 
+                    type="submit"
+                    disabled={!input.trim() || isThinking}
+                    className="absolute right-2 text-green-600 p-1.5 hover:bg-green-50 rounded-full transition-colors flex items-center justify-center disabled:opacity-50"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         </>
