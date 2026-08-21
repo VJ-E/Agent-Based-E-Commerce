@@ -13,9 +13,11 @@ export async function GET(request) {
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const isDeal = searchParams.get('isDeal');
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = 20; // 20 items per page
     
     let filter = {};
-    if (category && category !== 'All') filter.category = category;
+    if (category && category !== 'All') filter.category = { $regex: category, $options: 'i' };
     if (isDeal === 'true') filter.isDeal = true;
     
     if (minPrice || maxPrice) {
@@ -31,7 +33,11 @@ export async function GET(request) {
       ];
     }
     
-    const products = await Product.find(filter).sort({ createdAt: -1 });
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
     
     return NextResponse.json(products);
   } catch (error) {
