@@ -17,7 +17,7 @@ export default function SidebarFilter({ categories }) {
     }
     if (key === 'category') params.delete('q');
     
-    router.push(`/?${params.toString()}`);
+    router.push(`/?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -79,7 +79,7 @@ export default function SidebarFilter({ categories }) {
         </div>
       </nav>
       <div className="p-6 mt-auto">
-        <button onClick={() => router.push('/')} className="w-full py-3 px-4 rounded-xl text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-colors font-semibold text-sm shadow-sm active:scale-95">Reset All</button>
+        <button onClick={() => router.push('/', { scroll: false })} className="w-full py-3 px-4 rounded-xl text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-colors font-semibold text-sm shadow-sm active:scale-95">Reset All</button>
       </div>
     </aside>
   );
