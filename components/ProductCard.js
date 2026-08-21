@@ -22,7 +22,9 @@ export default function ProductCard({ product }) {
         />
       </div>
       <div className="flex flex-col flex-1 px-2">
-        <div className="text-xs font-[family-name:var(--font-body)] font-bold text-green-600 mb-1 uppercase tracking-wider">{product.category}</div>
+        <div className="text-xs font-[family-name:var(--font-body)] font-bold text-green-600 mb-1 uppercase tracking-wider truncate" title={product.category}>
+          {product.category?.split(' > ').pop()}
+        </div>
         <h3 className="font-[family-name:var(--font-body)] font-bold text-lg text-zinc-800 leading-tight mb-2 line-clamp-2">{product.name}</h3>
         
         <div className="mt-auto flex items-end justify-between pt-4">

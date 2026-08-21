@@ -22,8 +22,9 @@ export default async function ProductDetails({ params }) {
     notFound();
   }
 
+  const baseCategory = product.category ? product.category.split(' > ')[0] : '';
   const relatedProducts = await Product.find({
-    category: product.category,
+    category: { $regex: baseCategory ? `^${baseCategory}` : '', $options: 'i' },
     _id: { $ne: product._id }
   }).limit(4);
 
@@ -55,8 +56,21 @@ export default async function ProductDetails({ params }) {
           </div>
           
           <div className="w-full lg:w-1/2 flex flex-col justify-center">
-            <p className="text-sm font-bold tracking-widest uppercase text-green-600 mb-2 font-[family-name:var(--font-body)]">{product.category}</p>
+            <p className="text-sm font-bold tracking-widest uppercase text-green-600 mb-2 font-[family-name:var(--font-body)] truncate" title={product.category}>{product.category?.split(' > ').pop()}</p>
             <h1 className="text-3xl md:text-5xl font-black text-zinc-900 mb-4 tracking-tight leading-tight font-[family-name:var(--font-body)]">{product.name}</h1>
+            
+            {/* Reviews Section */}
+            {product.rating > 0 && (
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex text-yellow-400 text-lg">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i}>{i < Math.round(product.rating) ? '★' : '☆'}</span>
+                  ))}
+                </div>
+                <span className="text-zinc-500 font-bold font-[family-name:var(--font-body)]">{product.rating}</span>
+                <span className="text-zinc-400 text-sm ml-2">({product.reviewCount} reviews)</span>
+              </div>
+            )}
             
             <div className="flex items-end space-x-4 mb-6">
               {product.isDeal ? (
@@ -73,6 +87,17 @@ export default async function ProductDetails({ params }) {
               {product.description}
             </p>
 
+            {product.features && product.features.length > 0 && (
+              <div className="mb-8 font-[family-name:var(--font-body)]">
+                <h3 className="font-bold text-zinc-800 mb-3 uppercase tracking-widest text-sm">Key Features</h3>
+                <ul className="list-disc pl-5 text-zinc-600 space-y-2">
+                  {product.features.slice(0, 5).map((feature, idx) => (
+                    <li key={idx}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4 mb-8 border-y border-zinc-200/50 py-6">
               <div className="flex-1">
                 <p className="text-sm text-zinc-400 mb-1 font-bold uppercase tracking-widest">Availability</p>
@@ -80,7 +105,7 @@ export default async function ProductDetails({ params }) {
               </div>
               <div className="flex-1">
                 <p className="text-sm text-zinc-400 mb-1 font-bold uppercase tracking-widest">Brand</p>
-                <p className="font-black text-zinc-800 text-lg">{product.metadata?.brand || 'AgentShop'}</p>
+                <p className="font-black text-zinc-800 text-lg">{product.brandName || product.metadata?.brand || 'Amazon'}</p>
               </div>
             </div>
 

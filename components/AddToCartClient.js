@@ -28,12 +28,23 @@ export default function AddToCartClient({ product, finalPrice }) {
         </div>
       </div>
       
-      <button 
-        onClick={() => addToCart(product, selectedColor)}
-        className="clay-btn w-full py-4 text-lg font-[family-name:var(--font-body)]"
-      >
-        Add to Cart - ₹{Math.round(finalPrice).toLocaleString()}
-      </button>
+      <div className="flex gap-4">
+        <button 
+          onClick={() => addToCart(product, selectedColor)}
+          className="clay-btn flex-1 py-4 text-lg font-[family-name:var(--font-body)]"
+        >
+          Add to Cart
+        </button>
+        <button 
+          onClick={() => {
+            addToCart(product, selectedColor);
+            alert('Proceeding to checkout with: ' + product.name);
+          }}
+          className="flex-1 py-4 text-lg font-[family-name:var(--font-body)] font-bold text-white bg-green-500 hover:bg-green-600 rounded-2xl shadow-[0_10px_20px_rgba(34,197,94,0.2)] transition-all active:scale-95"
+        >
+          Buy Now
+        </button>
+      </div>
     </div>
   );
 }
