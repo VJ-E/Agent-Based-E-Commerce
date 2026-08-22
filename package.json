@@ -16,15 +16,18 @@
     "@langchain/langgraph": "^1.4.13",
     "@langchain/openai": "^1.5.11",
     "@tailwindcss/typography": "^0.5.20",
+    "bcryptjs": "^3.0.3",
     "csv-parser": "^3.2.1",
     "framer-motion": "^13.1.1",
+    "jose": "^6.2.12",
     "mongoose": "^9.9.4",
     "next": "16.3.3",
     "razorpay": "^2.9.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

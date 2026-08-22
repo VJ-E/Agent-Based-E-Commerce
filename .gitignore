@@ -44,3 +44,9 @@ AGENTS.md
 CLAUDE.md
 plan.md
 *.csv
+
+# Python / Scratch
+scratch/
+venv/
+__pycache__/
+*.pyc
