@@ -7,10 +7,13 @@ const OrderItemSchema = new mongoose.Schema({
 });
 
 const OrderSchema = new mongoose.Schema({
-  orderId: { type: String, required: true, unique: true }, // Razorpay order ID or internal UUID
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  sessionId: { type: String, required: true },
+  cartHash: { type: String, required: true },
   items: [OrderItemSchema],
   totalAmount: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+  trackingStatus: { type: String, enum: ['processing', 'shipped', 'out_for_delivery', 'delivered'], default: 'processing' },
   paymentDetails: { type: mongoose.Schema.Types.Mixed },
 }, { timestamps: true });
 
