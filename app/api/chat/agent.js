@@ -5,23 +5,34 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import dbConnect from "@/lib/db/mongoose";
 import Product from "@/models/Product";
-import { MessagesAnnotation, StateGraph } from "@langchain/langgraph";
+import AuditLog from "@/models/AuditLog";
+import Order from "@/models/Order";
+import crypto from "crypto";
+import { StateGraph, Annotation } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { SystemMessage } from "@langchain/core/messages";
+import { SystemMessage, BaseMessage } from "@langchain/core/messages";
+
+const StateAnnotation = Annotation.Root({
+  messages: Annotation({
+    reducer: (x, y) => x.concat(y),
+    default: () => [],
+  }),
+  cart: Annotation({
+    reducer: (x, y) => y,
+    default: () => [],
+  })
+});
 
 // 1. Define Fallback LLM Models
 const groqModel = new ChatGroq({
   apiKey: process.env.GROQ_API_KEY || "dummy",
-  model: "llama-3.1-70b-versatile", // Primary model
+  model: "groq/compound-mini", // Primary model
   temperature: 0.2
 });
 
-const openRouterModel = new ChatOpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || "dummy",
-  configuration: {
-    baseURL: "https://openrouter.ai/api/v1"
-  },
-  model: "meta-llama/llama-3.1-70b-instruct", // Secondary model
+const secondaryGroqModel = new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY || "dummy",
+  model: "openai/gpt-oss-20b", // Secondary model (better quality)
   temperature: 0.2
 });
 
@@ -55,6 +66,14 @@ export const searchCatalogTool = tool(
       return "No products found matching the criteria in our catalog.";
     }
     
+    await AuditLog.create({
+      action: 'search_catalog',
+      entityType: 'search',
+      details: { query, category, maxPrice },
+      reason: 'AI searching for products to recommend',
+      status: 'success'
+    });
+    
     // Return structured JSON for the LLM and UI to consume
     return JSON.stringify(products.map(p => ({
       _id: p._id.toString(),
@@ -77,14 +96,92 @@ export const searchCatalogTool = tool(
   }
 );
 
-// 3. Define the LangGraph Nodes
-const tools = [searchCatalogTool];
+// 3. Define the Checkout Tool (with Policy Gatekeeper)
+export const checkoutCartTool = tool(
+  async ({}, config) => {
+    await dbConnect();
+    
+    // Extract the deterministic cart from the graph state
+    const state = config?.configurable?.state || {};
+    const cart = state.cart || [];
+
+    if (!cart || cart.length === 0) {
+      await AuditLog.create({ action: 'checkout', reason: 'Cart is empty', status: 'blocked' });
+      return "BLOCKED: The user's cart is empty. They cannot checkout.";
+    }
+
+    const total = cart.reduce((sum, item) => {
+      const price = item.isDeal ? item.price * (1 - item.discountPercentage / 100) : item.price;
+      return sum + (price * item.quantity);
+    }, 0);
+    
+    // SPEND BOUNDING POLICY
+    if (total > 5000) {
+      await AuditLog.create({ 
+        action: 'checkout', 
+        details: { total, cart },
+        reason: `Cart total ₹${total} exceeds the strict ₹5,000 policy limit.`, 
+        status: 'blocked' 
+      });
+      return `BLOCKED: The cart total (₹${total}) exceeds the ₹5,000 limit. You MUST apologize to the user and tell them they need to remove items before they can checkout.`;
+    }
+
+    // IDEMPOTENCY CHECK
+    const cartHash = crypto.createHash('sha256').update(JSON.stringify(cart)).digest('hex');
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60000);
+    const existingOrder = await Order.findOne({ cartHash, createdAt: { $gte: fifteenMinsAgo } });
+    
+    if (existingOrder) {
+      return "SUCCESS: The mock payment was processed successfully (Idempotent response). Tell the user their order is confirmed.";
+    }
+
+    // INVENTORY LOCKING
+    for (const item of cart) {
+      const product = await Product.findById(item._id);
+      if (!product || product.stockCount < item.quantity) {
+        await AuditLog.create({ action: 'checkout', reason: `Item ${item.name} out of stock.`, status: 'blocked' });
+        return `BLOCKED: ${item.name} is out of stock or does not have enough quantity. Apologize and tell the user to remove it.`;
+      }
+    }
+
+    // Decrement inventory
+    for (const item of cart) {
+      await Product.findByIdAndUpdate(item._id, { $inc: { stockCount: -item.quantity } });
+    }
+
+    // CREATE ORDER
+    await Order.create({
+      sessionId: config?.configurable?.sessionId || 'default-session',
+      cartHash,
+      totalAmount: total,
+      items: cart.map(i => ({ productId: i._id, name: i.name, quantity: i.quantity, priceAtPurchase: i.price })),
+      status: 'paid'
+    });
+
+    await AuditLog.create({ 
+      action: 'checkout', 
+      details: { total, cart },
+      reason: 'Checkout processed successfully', 
+      status: 'success' 
+    });
+
+    return "SUCCESS: The mock payment was processed successfully. Tell the user their order is confirmed.";
+  },
+  {
+    name: "checkout_cart",
+    description: "Use this to process a checkout when the user asks to buy what's in their cart. Requires no arguments, as it reads the cart from the backend state securely.",
+    schema: z.object({})
+  }
+);
+
+// 4. Define the LangGraph Nodes
+const tools = [searchCatalogTool, checkoutCartTool];
 const toolNode = new ToolNode(tools);
 
 // Bind tools to each model individually, then compose with fallbacks
 const modelWithTools = groqModel.bindTools(tools).withFallbacks({
   fallbacks: [
-    openRouterModel.bindTools(tools),
+    secondaryGroqModel.bindTools(tools),
     geminiModel.bindTools(tools)
   ]
 });
@@ -93,9 +190,11 @@ async function agentNode(state) {
   const messages = [
     new SystemMessage(
       "You are the Bentely AI Shopping Assistant. You help users find products, compare them, and discover deals. " +
-      "CRITICAL: ALWAYS use the `search_catalog` tool to fetch real products from the database. NEVER hallucinate or invent products! " +
-      "Format your responses using Markdown. Use bolding and bullet points to compare products clearly. " +
-      "If you found products via the tool, summarize them enthusiastically. The frontend will automatically display the product cards below your text, so you don't need to output image URLs."
+      "CRITICAL RULES: \n" +
+      "1. ALWAYS use the `search_catalog` tool to fetch real products from the database. NEVER hallucinate or invent products! \n" +
+      "2. If you see CART CONTEXT provided, and the user asks for recommendations, explicitly analyze their cart and recommend exactly ONE complementary item using `search_catalog`.\n" +
+      "3. If the user says they want to checkout, buy, or pay for their cart, invoke the `checkout_cart` tool immediately.\n" +
+      "4. Format your responses using Markdown. Use bolding and bullet points to compare products clearly. Do not output image URLs."
     ),
     ...state.messages,
   ];
@@ -114,9 +213,12 @@ function shouldContinue(state) {
   return "__end__";
 }
 
-const workflow = new StateGraph(MessagesAnnotation)
+const workflow = new StateGraph(StateAnnotation)
   .addNode("agent", agentNode)
-  .addNode("tools", toolNode)
+  .addNode("tools", async (state, config) => {
+    // Pass the state into the tool node's config so tools can access it securely
+    return await toolNode.invoke(state, { ...config, configurable: { ...config?.configurable, state } });
+  })
   .addEdge("__start__", "agent")
   .addConditionalEdges("agent", shouldContinue)
   .addEdge("tools", "agent");

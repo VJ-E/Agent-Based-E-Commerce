@@ -1,28 +1,36 @@
 import { NextResponse } from 'next/server';
 import { appGraph } from './agent';
-import { HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
+import { HumanMessage, AIMessage, ToolMessage, SystemMessage } from "@langchain/core/messages";
 
 export async function POST(req) {
   try {
-    const { messages } = await req.json();
+    const { messages, cart } = await req.json();
     
     // Convert JSON messages to LangChain message classes
     const lcMessages = messages.map(m => {
-      if (m.role === 'user') return new HumanMessage(m.content);
+      const safeContent = m.content || "";
+      if (m.role === 'user') return new HumanMessage(safeContent);
       if (m.role === 'assistant') {
-        const msg = new AIMessage(m.content);
+        const msg = new AIMessage(safeContent);
         if (m.tool_calls) msg.tool_calls = m.tool_calls;
         return msg;
       }
       if (m.role === 'tool') {
-        return new ToolMessage({ content: m.content, tool_call_id: m.tool_call_id });
+        return new ToolMessage({ content: safeContent, tool_call_id: m.tool_call_id });
       }
-      return new HumanMessage(m.content);
+      return new HumanMessage(safeContent);
     });
+
+    // Inject cart context
+    if (cart && cart.length > 0) {
+      const cartSummary = cart.map(item => `${item.quantity}x ${item.name} (₹${item.price})`).join(', ');
+      lcMessages.unshift(new SystemMessage(`CART CONTEXT: The user currently has the following items in their cart: ${cartSummary}. Keep this in mind when making upselling recommendations.`));
+    }
 
     // Invoke the LangGraph multi-agent workflow
     const finalState = await appGraph.invoke({
-      messages: lcMessages
+      messages: lcMessages,
+      cart: cart || []
     });
 
     // Extract the new messages to send back
