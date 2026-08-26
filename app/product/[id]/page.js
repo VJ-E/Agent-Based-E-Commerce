@@ -1,5 +1,6 @@
 import connectToDatabase from '@/lib/db/mongoose';
 import Product from '@/models/Product';
+import Review from '@/models/Review';
 import ProductCard from '@/components/ProductCard';
 import AddToCartClient from '@/components/AddToCartClient';
 import Link from 'next/link';
@@ -31,6 +32,8 @@ export default async function ProductDetails({ params }) {
   const finalPrice = product.isDeal 
     ? product.price * (1 - product.discountPercentage / 100) 
     : product.price;
+
+  const reviews = await Review.find({ productId: product._id }).populate('userId', 'name').sort({ createdAt: -1 }).lean();
 
   return (
     <div className="h-[calc(100vh-5rem)] overflow-y-auto custom-scrollbar pb-20 w-full max-w-[1920px] mx-auto">
@@ -111,6 +114,40 @@ export default async function ProductDetails({ params }) {
 
             <AddToCartClient product={JSON.parse(JSON.stringify(product))} finalPrice={finalPrice} />
           </div>
+        </div>
+
+        {/* Written Reviews Section */}
+        <div className="mb-16">
+           <h2 className="text-2xl font-black text-zinc-800 mb-6 font-[family-name:var(--font-body)]">Customer Reviews</h2>
+           {reviews.length === 0 ? (
+             <div className="clay-card rounded-2xl p-8 text-center bg-white/50">
+               <p className="text-zinc-500">No written reviews yet. Be the first to review after purchasing!</p>
+             </div>
+           ) : (
+             <div className="space-y-4">
+               {reviews.map(review => (
+                 <div key={review._id.toString()} className="clay-card rounded-2xl p-6">
+                   <div className="flex items-center justify-between mb-4">
+                     <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-black">
+                         {review.userId?.name?.charAt(0) || 'A'}
+                       </div>
+                       <div>
+                         <p className="font-bold text-zinc-800">{review.userId?.name || 'Anonymous'}</p>
+                         <p className="text-xs text-zinc-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                       </div>
+                     </div>
+                     <div className="flex text-yellow-400 text-lg">
+                       {[...Array(5)].map((_, i) => (
+                         <span key={i}>{i < review.rating ? '★' : '☆'}</span>
+                       ))}
+                     </div>
+                   </div>
+                   <p className="text-zinc-700 text-sm leading-relaxed">{review.comment}</p>
+                 </div>
+               ))}
+             </div>
+           )}
         </div>
 
         {relatedProducts.length > 0 && (

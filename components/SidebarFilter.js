@@ -1,9 +1,13 @@
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function SidebarFilter({ categories }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   
   const currentCategory = searchParams.get('category') || 'All';
   const isDeal = searchParams.get('isDeal') === 'true';
@@ -17,7 +21,7 @@ export default function SidebarFilter({ categories }) {
     }
     if (key === 'category') params.delete('q');
     
-    router.push(`/?${params.toString()}`, { scroll: false });
+    router.push(`/shop?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -79,8 +83,18 @@ export default function SidebarFilter({ categories }) {
         </div>
       </nav>
       <div className="p-6 mt-auto">
-        <button onClick={() => router.push('/', { scroll: false })} className="w-full py-3 px-4 rounded-xl text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-colors font-semibold text-sm shadow-sm active:scale-95">Reset All</button>
+        <button onClick={() => router.push('/shop', { scroll: false })} className="w-full py-3 px-4 rounded-xl text-zinc-600 bg-zinc-100 hover:bg-zinc-200 transition-colors font-semibold text-sm shadow-sm active:scale-95">Reset All</button>
       </div>
+      
+      {/* Admin Link at the bottom */}
+      {user && user.role === 'admin' && (
+        <div className="px-6 pb-6 mt-4 border-t border-zinc-100 pt-6">
+           <Link href="/admin" className="flex items-center gap-2 text-sm font-bold text-zinc-400 hover:text-green-600 transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              Merchant Control Plane
+           </Link>
+        </div>
+      )}
     </aside>
   );
 }
