@@ -3,6 +3,8 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import { CartProvider } from '@/components/CartProvider';
 import CartSidebar from '@/components/CartSidebar';
+import { AuthProvider } from '@/components/AuthProvider';
+import AnalyticsProvider from '@/components/AnalyticsProvider';
 
 const gondens = localFont({ 
   src: './fonts/Gondens DEMO.otf',
@@ -40,13 +42,17 @@ export default function RootLayout({ children }) {
         <div className="fixed inset-0 z-[-1] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#d4d4d8 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-50/80"></div>
         </div>
-        <CartProvider>
-          <Navbar />
-          <CartSidebar />
-          <main className="relative z-10 pt-20">
-            {children}
-          </main>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <AnalyticsProvider>
+              <Navbar />
+              <CartSidebar />
+              <main className="relative z-10 pt-20">
+                {children}
+              </main>
+            </AnalyticsProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

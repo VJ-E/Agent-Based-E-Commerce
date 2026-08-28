@@ -46,6 +46,10 @@ export function CartProvider({ children }) {
     ));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const cartTotal = cart.reduce((total, item) => {
     const price = item.isDeal ? item.price * (1 - item.discountPercentage / 100) : item.price;
     return total + (price * item.quantity);
@@ -55,7 +59,7 @@ export function CartProvider({ children }) {
 
   return (
     <CartContext.Provider value={{ 
-      cart, addToCart, removeFromCart, updateQuantity, 
+      cart, addToCart, removeFromCart, updateQuantity, clearCart,
       cartTotal, cartCount, isCartOpen, setIsCartOpen 
     }}>
       {children}

@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCart } from './CartProvider';
+import { trackEvent } from './AnalyticsProvider';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -9,7 +10,11 @@ export default function ProductCard({ product }) {
     : product.price;
 
   return (
-    <Link href={`/product/${product._id}`} className="clay-card p-4 flex flex-col group cursor-pointer relative h-full">
+    <Link 
+      href={`/product/${product._id}`} 
+      onClick={() => trackEvent('click_product', { productId: product._id, name: product.name, price: finalPrice })}
+      className="clay-card p-4 flex flex-col group cursor-pointer relative h-full"
+    >
       {product.isDeal && (
         <div className="absolute top-6 left-6 z-10 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold tracking-wide shadow-sm border border-red-100">SALE {product.discountPercentage}%</div>
       )}

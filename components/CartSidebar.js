@@ -71,9 +71,9 @@ export default function CartSidebar() {
               <p>Subtotal</p>
               <p className="text-green-600">₹{Math.round(cartTotal).toLocaleString()}</p>
             </div>
-            <button className="clay-btn w-full py-4 text-lg font-black tracking-wide">
+            <a href="/checkout" onClick={() => setIsCartOpen(false)} className="clay-btn w-full py-4 text-lg font-black tracking-wide block text-center">
               Secure Checkout
-            </button>
+            </a>
           </div>
         )}
       </div>

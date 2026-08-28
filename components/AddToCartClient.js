@@ -1,9 +1,12 @@
 'use client';
 import { useState } from 'react';
 import { useCart } from './CartProvider';
+import { useRouter } from 'next/navigation';
+import { trackEvent } from './AnalyticsProvider';
 
 export default function AddToCartClient({ product, finalPrice }) {
-  const { addToCart } = useCart();
+  const { addToCart, setIsCartOpen } = useCart();
+  const router = useRouter();
   const colors = ['Space Gray', 'Midnight Blue', 'Starlight Silver', 'Matte Black'];
   const [selectedColor, setSelectedColor] = useState(colors[0]);
 
@@ -30,15 +33,20 @@ export default function AddToCartClient({ product, finalPrice }) {
       
       <div className="flex gap-4">
         <button 
-          onClick={() => addToCart(product, selectedColor)}
+          onClick={() => {
+            trackEvent('add_to_cart', { productId: product._id, name: product.name, color: selectedColor, price: finalPrice });
+            addToCart(product, selectedColor);
+          }}
           className="clay-btn flex-1 py-4 text-lg font-[family-name:var(--font-body)]"
         >
           Add to Cart
         </button>
         <button 
           onClick={() => {
+            trackEvent('add_to_cart', { productId: product._id, name: product.name, color: selectedColor, price: finalPrice });
             addToCart(product, selectedColor);
-            alert('Proceeding to checkout with: ' + product.name);
+            setIsCartOpen(false);
+            router.push('/checkout');
           }}
           className="flex-1 py-4 text-lg font-[family-name:var(--font-body)] font-bold text-white bg-green-500 hover:bg-green-600 rounded-2xl shadow-[0_10px_20px_rgba(34,197,94,0.2)] transition-all active:scale-95"
         >
