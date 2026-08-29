@@ -28,7 +28,9 @@ const CATEGORIES = [
   'Toys_and_Games', 'Video_Games'
 ];
 
-const ITEMS_PER_CATEGORY = 100;
+const ITEMS_PER_CATEGORY = 50;
+const FASHION_CATEGORIES = ['Amazon_Fashion', 'Clothing_Shoes_and_Jewelry', 'Beauty_and_Personal_Care', 'All_Beauty'];
+const FASHION_ITEMS_LIMIT = 300;
 
 function streamAndParseJSONL(url, limit) {
   return new Promise((resolve, reject) => {
@@ -91,9 +93,10 @@ function streamAndParseJSONL(url, limit) {
                 price = Math.floor(Math.random() * (9999 - 499 + 1)) + 499;
               }
 
-              // Randomize Deal
-              const isDeal = Math.random() > 0.8;
-              const discountPercentage = isDeal ? Math.floor(Math.random() * 40) + 10 : 0;
+              // Randomize Deal - Force fashion to be deals
+              const isFashionCategory = FASHION_CATEGORIES.includes(url.split('/').pop().replace('.jsonl', ''));
+              const isDeal = isFashionCategory ? true : Math.random() > 0.8;
+              const discountPercentage = isDeal ? Math.floor(Math.random() * 40) + 15 : 0;
               
               const product = {
                 name: item.title,
@@ -152,9 +155,11 @@ async function seedDatabase() {
     let allProducts = [];
 
     for (const cat of CATEGORIES) {
-      console.log(`\nFetching ${ITEMS_PER_CATEGORY} items for category: ${cat}...`);
+      const isFashion = FASHION_CATEGORIES.includes(cat);
+      const limit = isFashion ? FASHION_ITEMS_LIMIT : ITEMS_PER_CATEGORY;
+      console.log(`\nFetching ${limit} items for category: ${cat}...`);
       const url = `${BASE_URL}${cat}.jsonl`;
-      const products = await streamAndParseJSONL(url, ITEMS_PER_CATEGORY);
+      const products = await streamAndParseJSONL(url, limit);
       console.log(`Successfully parsed ${products.length} items for ${cat}.`);
       allProducts = allProducts.concat(products);
     }
