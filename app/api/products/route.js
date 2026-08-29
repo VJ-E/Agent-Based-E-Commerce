@@ -17,7 +17,18 @@ export async function GET(request) {
     const limit = 20; // 20 items per page
     
     let filter = {};
-    if (category && category !== 'All') filter.category = { $regex: category, $options: 'i' };
+    if (category && category !== 'All') {
+      if (category === 'Clothing') {
+        filter.category = { $regex: /AMAZON FASHION|Clothing/i };
+      } else if (category === 'Beauty') {
+        filter.category = { $regex: /Beauty/i };
+      } else if (category === 'Electronics') {
+        filter.category = { $regex: /Electronics|Camera|Computers|Audio/i };
+      } else {
+        filter.category = { $regex: category, $options: 'i' };
+      }
+    }
+    
     if (isDeal === 'true') filter.isDeal = true;
     
     if (minPrice || maxPrice) {
@@ -34,7 +45,7 @@ export async function GET(request) {
     }
     
     const products = await Product.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ isDeal: -1, createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
