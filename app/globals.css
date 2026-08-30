@@ -70,7 +70,9 @@
 /* Hide Next.js Dev Indicator */
 #nextjs-build-indicator, 
 [data-nextjs-toast], 
-.nextjs-toast { 
+.nextjs-toast,
+#next-logo,
+[data-nextjs-dev-tools-button] { 
   display: none !important; 
 }
 
