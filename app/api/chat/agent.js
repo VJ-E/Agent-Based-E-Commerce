@@ -23,26 +23,7 @@ const StateAnnotation = Annotation.Root({
   })
 });
 
-// 1. Define Fallback LLM Models
-const groqModel = new ChatGroq({
-  apiKey: process.env.GROQ_API_KEY || "dummy",
-  model: "groq/compound-mini", // Primary model
-  temperature: 0.2
-});
-
-const secondaryGroqModel = new ChatGroq({
-  apiKey: process.env.GROQ_API_KEY || "dummy",
-  model: "openai/gpt-oss-20b", // Secondary model (better quality)
-  temperature: 0.2
-});
-
-const geminiModel = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY || "dummy",
-  model: "gemini-2.5-flash", // Tertiary model
-  temperature: 0.2
-});
-
-// Fallbacks will be applied after tools are bound
+// Note: LLM Models will be initialized dynamically per request in createAppGraph
 
 // 2. Define the Catalog Search Tool
 export const searchCatalogTool = tool(
@@ -178,32 +159,6 @@ export const checkoutCartTool = tool(
 const tools = [searchCatalogTool, checkoutCartTool];
 const toolNode = new ToolNode(tools);
 
-// Bind tools to each model individually, then compose with fallbacks
-const modelWithTools = groqModel.bindTools(tools).withFallbacks({
-  fallbacks: [
-    secondaryGroqModel.bindTools(tools),
-    geminiModel.bindTools(tools)
-  ]
-});
-
-async function agentNode(state) {
-  const messages = [
-    new SystemMessage(
-      "You are the Bentely AI Shopping Assistant. You help users find products, compare them, and discover deals. " +
-      "CRITICAL RULES: \n" +
-      "1. ALWAYS use the `search_catalog` tool to fetch real products from the database. NEVER hallucinate or invent products! \n" +
-      "2. If you see CART CONTEXT provided, and the user asks for recommendations, explicitly analyze their cart and recommend exactly ONE complementary item using `search_catalog`.\n" +
-      "3. If the user says they want to checkout, buy, or pay for their cart, invoke the `checkout_cart` tool immediately.\n" +
-      "4. Format your responses using Markdown. Use bolding and bullet points to compare products clearly. Do not output image URLs."
-    ),
-    ...state.messages,
-  ];
-  
-  const response = await modelWithTools.invoke(messages);
-  return { messages: [response] };
-}
-
-// 4. Construct the Graph
 function shouldContinue(state) {
   const messages = state.messages;
   const lastMessage = messages[messages.length - 1];
@@ -213,14 +168,60 @@ function shouldContinue(state) {
   return "__end__";
 }
 
-const workflow = new StateGraph(StateAnnotation)
-  .addNode("agent", agentNode)
-  .addNode("tools", async (state, config) => {
-    // Pass the state into the tool node's config so tools can access it securely
-    return await toolNode.invoke(state, { ...config, configurable: { ...config?.configurable, state } });
-  })
-  .addEdge("__start__", "agent")
-  .addConditionalEdges("agent", shouldContinue)
-  .addEdge("tools", "agent");
+// 5. Export a factory function to create the graph per-request with the correct API key
+export function createAppGraph(userGroqApiKey) {
+  const groqKey = userGroqApiKey || process.env.GROQ_API_KEY || "dummy";
+  
+  const groqModel = new ChatGroq({
+    apiKey: groqKey,
+    model: "groq/compound-mini", 
+    temperature: 0.2
+  });
 
-export const appGraph = workflow.compile();
+  const secondaryGroqModel = new ChatGroq({
+    apiKey: groqKey,
+    model: "openai/gpt-oss-20b", 
+    temperature: 0.2
+  });
+
+  const geminiModel = new ChatGoogleGenerativeAI({
+    apiKey: process.env.GEMINI_API_KEY || "dummy",
+    model: "gemini-2.5-flash", 
+    temperature: 0.2
+  });
+
+  const modelWithTools = groqModel.bindTools(tools).withFallbacks({
+    fallbacks: [
+      secondaryGroqModel.bindTools(tools),
+      geminiModel.bindTools(tools)
+    ]
+  });
+
+  async function agentNode(state) {
+    const messages = [
+      new SystemMessage(
+        "You are the Bentely AI Shopping Assistant. You help users find products, compare them, and discover deals. " +
+        "CRITICAL RULES: \n" +
+        "1. ALWAYS use the `search_catalog` tool to fetch real products from the database. NEVER hallucinate or invent products! \n" +
+        "2. If you see CART CONTEXT provided, and the user asks for recommendations, explicitly analyze their cart and recommend exactly ONE complementary item using `search_catalog`.\n" +
+        "3. If the user says they want to checkout, buy, or pay for their cart, invoke the `checkout_cart` tool immediately.\n" +
+        "4. Format your responses using Markdown. Use bolding and bullet points to compare products clearly. Do not output image URLs."
+      ),
+      ...state.messages,
+    ];
+    
+    const response = await modelWithTools.invoke(messages);
+    return { messages: [response] };
+  }
+
+  const workflow = new StateGraph(StateAnnotation)
+    .addNode("agent", agentNode)
+    .addNode("tools", async (state, config) => {
+      return await toolNode.invoke(state, { ...config, configurable: { ...config?.configurable, state } });
+    })
+    .addEdge("__start__", "agent")
+    .addConditionalEdges("agent", shouldContinue)
+    .addEdge("tools", "agent");
+
+  return workflow.compile();
+}

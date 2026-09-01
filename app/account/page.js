@@ -58,6 +58,16 @@ export default async function AccountPage() {
               <p className="text-zinc-500 mt-1">Update your password to keep your account secure.</p>
             </div>
           </Link>
+
+          <Link href="/account/api-keys" className="clay-card rounded-[2rem] p-8 flex items-center gap-6 hover:border-purple-300 transition-colors group cursor-pointer block text-left w-full h-full">
+            <div className="w-16 h-16 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform shrink-0">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-zinc-800 group-hover:text-purple-600 transition-colors">AI API Keys</h3>
+              <p className="text-zinc-500 mt-1">Configure your personal Groq API Key</p>
+            </div>
+          </Link>
           
           <LogoutButton />
         </div>
