@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 export async function GET(request) {
   try {
-    const token = cookies().get('token')?.value;
+    const token = cookies().get('bentely_auth_token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decoded = await verifyToken(token);
@@ -33,7 +33,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const token = cookies().get('token')?.value;
+    const token = cookies().get('bentely_auth_token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decoded = await verifyToken(token);
