@@ -12,11 +12,11 @@
 Agent-Based E-Commerce is a specialized platform designed to be seamlessly accessible by both human users and autonomous AI agents. It addresses the growing need for programmatic commerce by offering machine-readable APIs and structured data interfaces alongside a modern, human-centric visual storefront. This dual-approach empowers AI models to independently search catalogs, verify stock, and execute purchases while providing an excellent graphical experience for traditional shoppers.
 
 ## Preview
-[Insert Screenshot 1 Here]
 
-[Insert Screenshot 2 Here]
+https://github.com/user-attachments/assets/e9d4e82a-6041-42d7-ad64-880658b636cb
 
-[Insert Video Demo Link Here]
+
+
 
 ## System Architecture
 The application follows a modern monolithic architecture with a unified frontend and backend.
