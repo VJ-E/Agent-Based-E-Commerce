@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 import MiniProductCard from '@/components/MiniProductCard';
 import { useCart } from '@/components/CartProvider';
 import { trackEvent } from '@/components/AnalyticsProvider';
+import RecommendedProducts from '@/components/RecommendedProducts';
 
 function Storefront() {
   const searchParams = useSearchParams();
@@ -170,7 +171,12 @@ function Storefront() {
         <SidebarFilter categories={['Movies & TV', 'Industrial & Scientific', 'Sports & Outdoors', 'Clothing', 'Books', 'Electronics']} />
         
         {/* Main Content Area */}
-        <main id="discover" className="flex-1 lg:ml-0 p-6 lg:p-8 w-full scroll-mt-24">
+        <main id="discover" className="flex-1 lg:ml-0 p-6 lg:p-8 w-full scroll-mt-24 overflow-hidden">
+          {/* Recommended For You */}
+          <div className="-mx-6 lg:-mx-8 mb-4">
+            <RecommendedProducts userId="12345" />
+          </div>
+
           {/* Page Header */}
         <div className="mb-8 flex justify-between items-end">
           <div>

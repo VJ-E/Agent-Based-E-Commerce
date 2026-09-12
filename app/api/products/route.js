@@ -17,6 +17,11 @@ export async function GET(request) {
     const limit = 20; // 20 items per page
     
     let filter = {};
+    const ids = searchParams.get('ids');
+    if (ids) {
+      filter._id = { $in: ids.split(',') };
+    }
+    
     if (category && category !== 'All') {
       if (category === 'Clothing') {
         filter.category = { $regex: /AMAZON FASHION|Clothing/i };
