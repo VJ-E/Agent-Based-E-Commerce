@@ -9,7 +9,7 @@ import User from '@/models/User';
 export async function POST(req) {
   try {
     const { messages, cart } = await req.json();
-    
+
     // Convert JSON messages to LangChain message classes
     const lcMessages = messages.map(m => {
       const safeContent = m.content || "";
@@ -49,6 +49,15 @@ export async function POST(req) {
       console.error("Failed to load user API key", e);
     }
 
+    const groqKey = userGroqApiKey || process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      return NextResponse.json({
+        role: 'assistant',
+        content: "You don't have an API key for the AI. Please go to **Settings -> Groq API** and paste your key. If you don't have a key, you can get one from the [Groq API website](https://console.groq.com/keys).",
+        products: []
+      });
+    }
+
     // Invoke the LangGraph multi-agent workflow
     const appGraph = createAppGraph(userGroqApiKey);
     const finalState = await appGraph.invoke({
@@ -58,7 +67,7 @@ export async function POST(req) {
 
     // Extract the new messages to send back
     const newMessages = finalState.messages.slice(lcMessages.length);
-    
+
     // Intercept tool outputs to inject MiniProductCards in the frontend
     let recommendedProducts = [];
     for (const msg of newMessages) {
@@ -80,13 +89,13 @@ export async function POST(req) {
     }
 
     const lastAiMessage = newMessages.reverse().find(m => m._getType() === 'ai');
-    
+
     return NextResponse.json({
       role: 'assistant',
       content: lastAiMessage ? lastAiMessage.content : "I encountered an error processing that.",
       products: recommendedProducts
     });
-    
+
   } catch (error) {
     console.error("Chat API Error:", error);
     return NextResponse.json({ error: "Failed to process chat" }, { status: 500 });

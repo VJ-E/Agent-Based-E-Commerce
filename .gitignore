@@ -50,3 +50,7 @@ scratch/
 venv/
 __pycache__/
 *.pyc
+
+brag
+brag-output
+launch-video-project
