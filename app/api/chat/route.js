@@ -34,7 +34,8 @@ export async function POST(req) {
     // Retrieve user's Groq API Key if logged in
     let userGroqApiKey = null;
     try {
-      const token = cookies().get('bentely_auth_token')?.value;
+      const cookieStore = await cookies();
+      const token = cookieStore.get('bentely_auth_token')?.value;
       if (token) {
         const decoded = await verifyToken(token);
         if (decoded) {

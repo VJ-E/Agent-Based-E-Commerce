@@ -6,7 +6,8 @@ import { cookies } from 'next/headers';
 
 export async function GET(request) {
   try {
-    const token = cookies().get('bentely_auth_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('bentely_auth_token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decoded = await verifyToken(token);
@@ -33,7 +34,8 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const token = cookies().get('bentely_auth_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('bentely_auth_token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const decoded = await verifyToken(token);
@@ -57,6 +59,6 @@ export async function POST(request) {
     return NextResponse.json({ message: 'API Key saved successfully' });
   } catch (error) {
     console.error('Error saving API key:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
   }
 }
