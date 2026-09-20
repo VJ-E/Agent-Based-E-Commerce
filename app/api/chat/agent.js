@@ -31,7 +31,18 @@ export const searchCatalogTool = tool(
     await dbConnect();
     const filter = {};
     if (query) {
-      filter.name = { $regex: query, $options: "i" };
+      // Basic singularization to match "headsets" to "headset"
+      let cleanQuery = query.toLowerCase();
+      if (cleanQuery.endsWith('s') && cleanQuery.length > 3 && !cleanQuery.endsWith('ss')) {
+        cleanQuery = cleanQuery.slice(0, -1);
+      }
+      const regex = { $regex: cleanQuery, $options: "i" };
+      filter.$or = [
+        { name: regex },
+        { category: regex },
+        { description: regex },
+        { brandName: regex }
+      ];
     }
     if (category && category !== 'All') {
       filter.category = { $regex: category, $options: "i" };
@@ -41,10 +52,15 @@ export const searchCatalogTool = tool(
     }
     
     // Find matching products
-    const products = await Product.find(filter).limit(4).lean();
+    let products = await Product.find(filter).limit(4).lean();
+    
+    // Fallback: If no products found, try a looser search (ignore category/price)
+    if (products.length === 0 && filter.$or) {
+      products = await Product.find({ $or: filter.$or }).limit(4).lean();
+    }
     
     if (products.length === 0) {
-      return "No products found matching the criteria in our catalog.";
+      return "No products found matching the criteria in our catalog. Suggest related queries or clear the filters.";
     }
     
     await AuditLog.create({
